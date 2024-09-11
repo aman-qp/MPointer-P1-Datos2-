@@ -153,6 +153,7 @@ int ListaDobEnlazada::size() const {
 
 MPointer<Node> ListaDobEnlazada::getNode(int index) const {
     if (index < 0) {
+        std::cerr << "Error: Índice negativo en getNode()" << std::endl;
         return nullptr;
     }
 
@@ -162,6 +163,7 @@ MPointer<Node> ListaDobEnlazada::getNode(int index) const {
     }
 
     if (current == nullptr) {
+        std::cerr << "Error: Índice fuera de rango en getNode()" << std::endl;
     }
 
     return current;

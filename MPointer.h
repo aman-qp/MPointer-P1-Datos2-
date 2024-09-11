@@ -15,7 +15,7 @@ public:
     }
 
     // Constructor para nullptr
-    explicit MPointer(std::nullptr_t) : ptr(nullptr), id(-1) {
+    MPointer(std::nullptr_t) : ptr(nullptr), id(-1) {
     }
 
     // Constructor de copia
