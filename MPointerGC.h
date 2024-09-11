@@ -1,60 +1,100 @@
 #ifndef MPOINTERGC_H
 #define MPOINTERGC_H
 
-#include <unordered_map>
+#include <list>
 #include <mutex>
+#include <thread>
+#include <chrono>
+#include <atomic>
 
 class MPointerGC {
 private:
-    std::unordered_map<int, void*> pointers;  // Mapa de punteros gestionados
-    std::unordered_map<int, int> refCounts;   // Mapa de contadores de referencias
-    int nextId;  // Siguiente ID disponible para asignar
-    std::mutex mtx;  // Mutex para proteger el acceso a los mapas
+    struct MPointerInfo {
+        void* address;
+        int id;
+        int refCount;
+    };
 
-    // Constructor privado para el patrón Singleton
-    MPointerGC() : nextId(0) {}
+    std::list<MPointerInfo> pointers;
+    std::mutex mtx;
+    std::thread gcThread;
+    std::atomic<bool> running;
+    int nextId;
+
+    MPointerGC() : nextId(0), running(false) {}
+
+    void gcLoop() {
+        while (running) {
+            cleanupPointers();
+            std::this_thread::sleep_for(std::chrono::seconds(5)); // Ejecutar cada 5 segundos
+        }
+    }
+
+    void cleanupPointers() {
+        std::lock_guard<std::mutex> lock(mtx);
+        pointers.remove_if([](const MPointerInfo& info) {
+            if (info.refCount <= 0) {
+                // Asumimos que info.address es un puntero a T*
+                delete static_cast<char*>(info.address);  // Usamos char* como un tipo genérico
+                return true;
+            }
+            return false;
+        });
+    }
 
 public:
-    // Metodo estático para obtener la instancia única de MPointerGC (patrón Singleton)
     static MPointerGC& GetInstance() {
         static MPointerGC instance;
         return instance;
     }
 
-    // Agrega un puntero al gestor y devuelve un ID único
+    void Initialize() {
+        if (!running.exchange(true)) {
+            gcThread = std::thread(&MPointerGC::gcLoop, this);
+        }
+    }
+
+    void Shutdown() {
+        running = false;
+        if (gcThread.joinable()) {
+            gcThread.join();
+        }
+    }
+
     int AddPointer(void* ptr) {
         std::lock_guard<std::mutex> lock(mtx);
         int id = nextId++;
-        pointers[id] = ptr;
-        refCounts[id] = 1;  // Inicialmente una referencia
+        pointers.push_back({ptr, id, 1});
         return id;
     }
 
-    // Incrementa el contador de referencias para un puntero
     void IncrementRefCount(int id) {
         std::lock_guard<std::mutex> lock(mtx);
-        if (refCounts.find(id) != refCounts.end()) {
-            refCounts[id]++;
-        }
-    }
-
-    // Elimina un puntero del gestor y devuelve true si ya no hay más referencias
-    bool RemovePointer(int id) {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (refCounts.find(id) != refCounts.end()) {
-            refCounts[id]--;
-            if (refCounts[id] == 0) {
-                pointers.erase(id);
-                refCounts.erase(id);
-                return true;  // No hay más referencias
+        for (auto& info : pointers) {
+            if (info.id == id) {
+                info.refCount++;
+                break;
             }
         }
-        return false;  // Aún hay referencias
     }
 
-    // Prohíbe la copia y asignación del singleton
+    bool RemovePointer(int id) {
+        std::lock_guard<std::mutex> lock(mtx);
+        for (auto& info : pointers) {
+            if (info.id == id) {
+                info.refCount--;
+                return info.refCount <= 0;
+            }
+        }
+        return false;
+    }
+
+    ~MPointerGC() {
+        Shutdown();
+    }
+
     MPointerGC(const MPointerGC&) = delete;
     MPointerGC& operator=(const MPointerGC&) = delete;
 };
 
-#endif  // MPOINTERGC_H
+#endif // MPOINTERGC_H

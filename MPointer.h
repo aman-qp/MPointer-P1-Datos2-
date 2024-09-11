@@ -1,61 +1,119 @@
 #ifndef MPOINTER_H
 #define MPOINTER_H
 #include "MPointerGC.h"
+#include <utility>
 
 template<typename T>
 class MPointer {
 private:
-    T* ptr;  // Puntero a la memoria que se gestionará
-    int id;  // Identificador único para el puntero, asignado por MPointerGC
+    T* ptr;
+    int id;
 
 public:
     // Constructor por defecto
-    MPointer() : ptr(nullptr), id(-1) {}
+    MPointer() : ptr(nullptr), id(-1) {
+    }
 
-    // Metodo estático para crear un nuevo MPointer
-    static MPointer<T> New() {
+    // Constructor para nullptr
+    explicit MPointer(std::nullptr_t) : ptr(nullptr), id(-1) {
+    }
+
+    // Constructor de copia
+    MPointer(const MPointer<T>& other) : ptr(other.ptr), id(other.id) {
+        if (id != -1) {
+            MPointerGC::GetInstance().IncrementRefCount(id);
+        }
+    }
+
+    // Operador de movimiento
+    MPointer(MPointer<T>&& other) noexcept : ptr(other.ptr), id(other.id) {
+        other.ptr = nullptr;
+        other.id = -1;
+    }
+
+    // Función New para crear instancias de MPointer con el template T
+    template<typename... Args>
+    static MPointer<T> New(Args&&... args) {
         MPointer<T> mp;
-        mp.ptr = new T;  // Asignar memoria para el tipo T
-        mp.id = MPointerGC::GetInstance().AddPointer(&mp);  // Registrar el puntero en MPointerGC
+        mp.ptr = new T(std::forward<Args>(args)...);
+        mp.id = MPointerGC::GetInstance().AddPointer(mp.ptr);
         return mp;
     }
 
-    // Sobrecarga del operador *
+    // Operadores
     T& operator*() {
-        return *ptr;  // Devolver el valor referenciado
+        if (ptr == nullptr) {
+            throw std::runtime_error("Dereferencing null MPointer");
+        }
+        return *ptr;
     }
 
-    // Sobrecarga del operador &
-    T* operator&() {
-        return ptr;  // Devolver la dirección del puntero
+    T* operator->() {
+        if (ptr == nullptr) {
+            throw std::runtime_error("Accessing member through null MPointer");
+        }
+        return ptr;
     }
 
-    // Sobrecarga del operador =
+    const T* operator->() const {
+        if (ptr == nullptr) {
+            throw std::runtime_error("Accessing member through null MPointer");
+        }
+        return ptr;
+    }
+
+    bool operator==(std::nullptr_t) const {
+        return ptr == nullptr;
+    }
+
+    bool operator!=(std::nullptr_t) const {
+        return ptr != nullptr;
+    }
+
+    // Sobrecargar operador para nullptr
+    MPointer<T>& operator=(std::nullptr_t) {
+        clear();
+        return *this;
+    }
+
+    // Sobrecarga del operador de asignación entre dos MPointer
     MPointer<T>& operator=(const MPointer<T>& other) {
         if (this != &other) {
-            // Si este MPointer ya apuntaba a otro objeto, liberar memoria y reducir la referencia
-            if (this->ptr != nullptr) {
-                MPointerGC::GetInstance().RemovePointer(this->id);
-                delete this->ptr;
+            clear();
+            ptr = other.ptr;
+            id = other.id;
+            if (id != -1) {
+                MPointerGC::GetInstance().IncrementRefCount(id);
             }
-
-            this->ptr = other.ptr;
-            this->id = other.id;
-
-            // Incrementar el contador de referencias para el nuevo puntero
-            MPointerGC::GetInstance().IncrementRefCount(this->id);
         }
         return *this;
     }
 
-    // Destructor
+    // Operador de movimiento
+    MPointer<T>& operator=(MPointer<T>&& other) noexcept {
+        if (this != &other) {
+            clear();
+            ptr = other.ptr;
+            id = other.id;
+            other.ptr = nullptr;
+            other.id = -1;
+        }
+        return *this;
+    }
+
     ~MPointer() {
-        if (this->ptr != nullptr) {
-            // Informar a MPointerGC que este puntero se está destruyendo
-            if (MPointerGC::GetInstance().RemovePointer(this->id)) {
-                delete ptr;  // Solo eliminar si no hay más referencias
+        clear();
+    }
+
+private:
+    void clear() {
+        if (ptr != nullptr && id != -1) {
+            if (MPointerGC::GetInstance().RemovePointer(id)) {
+                delete ptr;
             }
         }
+        ptr = nullptr;
+        id = -1;
     }
 };
 
