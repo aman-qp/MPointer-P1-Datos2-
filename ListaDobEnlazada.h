@@ -22,18 +22,21 @@ public:
     void insertionSort();
     void quickSort();
     void append(int value);
+    int get(int index) const;
+    int size() const;
+    void remove(int index);
 
 private:
     MPointer<Node> first = nullptr;
     MPointer<Node> last = nullptr;
+    int listSize = 0;
 
     int partition(int low, int high);
     void quickSortRecursive(int low, int high);
     MPointer<Node> getNode(int index) const;
-    int get(int index) const;
     void set(int index, int value);
     void swap(int i, int j);
-    int size() const;
+
 };
 
 void ListaDobEnlazada::add(int value) {
@@ -45,6 +48,33 @@ void ListaDobEnlazada::add(int value) {
         last->next = newNode;
         last = newNode;
     }
+    ++listSize;
+}
+
+void ListaDobEnlazada::remove(int index) {
+    if (index < 0 || index >= size()) {
+        throw std::out_of_range("Index out of bounds");
+    }
+
+    MPointer<Node> current = first;
+    for (int i = 0; i < index; ++i) {
+        current = current->next;
+    }
+
+    if (current->prev.get()) {
+        current->prev->next = current->next;
+    } else {
+        first = current->next;  // Si estamos eliminando el primer nodo
+    }
+
+    if (current->next.get()) {
+        current->next->prev = current->prev;
+    } else {
+        last = current->prev;  // Si estamos eliminando el último nodo
+    }
+
+    // MPointer maneja la eliminación automáticamente
+    --listSize;  // Actualizar el tamaño de la lista
 }
 
 
@@ -142,13 +172,7 @@ void ListaDobEnlazada::swap(int i, int j) {
 }
 
 int ListaDobEnlazada::size() const {
-    int count = 0;
-    MPointer<Node> current = first;
-    while (current != nullptr) {
-        count++;
-        current = current->next;
-    }
-    return count;
+    return listSize;
 }
 
 MPointer<Node> ListaDobEnlazada::getNode(int index) const {
@@ -180,6 +204,7 @@ void ListaDobEnlazada::append(int value) {
         last->next = newNode;  // El actual último nodo apunta al nuevo nodo como su siguiente
         last = newNode;  // Ahora, el nuevo nodo se convierte en el último nodo
     }
+    ++listSize;
 }
 
 

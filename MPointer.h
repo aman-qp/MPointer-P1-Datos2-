@@ -10,6 +10,10 @@ private:
     int id;
 
 public:
+
+    void reset();
+    T* get() const;
+
     // Constructor por defecto
     MPointer() : ptr(nullptr), id(-1) {
     }
@@ -105,6 +109,8 @@ public:
         clear();
     }
 
+
+
 private:
     void clear() {
         if (ptr != nullptr && id != -1) {
@@ -116,5 +122,15 @@ private:
         id = -1;
     }
 };
+
+template<typename T>
+void MPointer<T>::reset() {
+    clear();
+}
+
+template<typename T>
+T* MPointer<T>::get() const {
+    return ptr;
+}
 
 #endif  // MPOINTER_H
