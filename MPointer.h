@@ -10,17 +10,14 @@ private:
     int id;
 
 public:
-
     void reset();
     T* get() const;
 
     // Constructor por defecto
-    MPointer() : ptr(nullptr), id(-1) {
-    }
+    MPointer() : ptr(nullptr), id(-1) {}
 
     // Constructor para nullptr
-    MPointer(std::nullptr_t) : ptr(nullptr), id(-1) {
-    }
+    MPointer(std::nullptr_t) : ptr(nullptr), id(-1) {}
 
     // Constructor de copia
     MPointer(const MPointer<T>& other) : ptr(other.ptr), id(other.id) {
@@ -44,7 +41,35 @@ public:
         return mp;
     }
 
-    // Operadores
+    // Operador de asignación para valores de tipo T
+    MPointer<T>& operator=(const T& value) {
+        if (ptr != nullptr) {
+            // Elimina el objeto actual
+            if (MPointerGC::GetInstance().RemovePointer(id)) {
+                delete ptr;
+            }
+        }
+        ptr = new T(value);
+        id = MPointerGC::GetInstance().AddPointer(ptr);
+        return *this;
+    }
+
+
+    // Operador de asignación entre dos MPointer
+    MPointer<T>& operator=(const MPointer<T>& other) {
+        if (this != &other) {
+            clear();
+            ptr = other.ptr;
+            id = other.id;
+            if (id != -1) {
+                MPointerGC::GetInstance().IncrementRefCount(id);
+            }
+        }
+        return *this;
+    }
+
+
+    // Operador de desreferencia
     T& operator*() {
         if (ptr == nullptr) {
             throw std::runtime_error("Dereferencing null MPointer");
@@ -52,6 +77,7 @@ public:
         return *ptr;
     }
 
+    // Operador de acceso a miembro
     T* operator->() {
         if (ptr == nullptr) {
             throw std::runtime_error("Accessing member through null MPointer");
@@ -66,6 +92,14 @@ public:
         return ptr;
     }
 
+    T& operator&() {
+        if (ptr == nullptr) {
+            throw std::runtime_error("Accessing value of null MPointer");
+        }
+        return *ptr;
+    }
+
+    // Operadores de comparación con nullptr
     bool operator==(std::nullptr_t) const {
         return ptr == nullptr;
     }
@@ -74,22 +108,9 @@ public:
         return ptr != nullptr;
     }
 
-    // Sobrecargar operador para nullptr
+    // Operador de asignación para nullptr
     MPointer<T>& operator=(std::nullptr_t) {
         clear();
-        return *this;
-    }
-
-    // Sobrecarga del operador de asignación entre dos MPointer
-    MPointer<T>& operator=(const MPointer<T>& other) {
-        if (this != &other) {
-            clear();
-            ptr = other.ptr;
-            id = other.id;
-            if (id != -1) {
-                MPointerGC::GetInstance().IncrementRefCount(id);
-            }
-        }
         return *this;
     }
 
@@ -105,11 +126,10 @@ public:
         return *this;
     }
 
+    // Destructor
     ~MPointer() {
         clear();
     }
-
-
 
 private:
     void clear() {

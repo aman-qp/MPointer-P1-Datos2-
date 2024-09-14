@@ -3,44 +3,47 @@
 
 #include "MPointer.h"
 #include <iostream>
+#include <stdexcept>
 
+template<typename T>
 class Node {
 public:
-    int value;
-    MPointer<Node> next;
-    MPointer<Node> prev;
+    T value;
+    MPointer<Node<T>> next;
+    MPointer<Node<T>> prev;
 
-    Node() : value(0), next(nullptr), prev(nullptr) {}
-    explicit Node(int val) : value(val), next(nullptr), prev(nullptr) {}
+    Node() : value(T()), next(nullptr), prev(nullptr) {}
+    explicit Node(const T& val) : value(val), next(nullptr), prev(nullptr) {}
 };
 
+template<typename T>
 class ListaDobEnlazada {
 public:
-    void add(int value);
+    void add(const T& value);
     void printList() const;
     void bubbleSort();
     void insertionSort();
     void quickSort();
-    void append(int value);
-    int get(int index) const;
+    void append(const T& value);
+    T get(int index) const;
     int size() const;
     void remove(int index);
 
 private:
-    MPointer<Node> first = nullptr;
-    MPointer<Node> last = nullptr;
+    MPointer<Node<T>> first = nullptr;
+    MPointer<Node<T>> last = nullptr;
     int listSize = 0;
 
     int partition(int low, int high);
     void quickSortRecursive(int low, int high);
-    MPointer<Node> getNode(int index) const;
-    void set(int index, int value);
+    MPointer<Node<T>> getNode(int index) const;
+    void set(int index, const T& value);
     void swap(int i, int j);
-
 };
 
-void ListaDobEnlazada::add(int value) {
-    MPointer<Node> newNode = MPointer<Node>::New(value);
+template<typename T>
+void ListaDobEnlazada<T>::add(const T& value) {
+    MPointer<Node<T>> newNode = MPointer<Node<T>>::New(value);
     if (first == nullptr) {
         first = last = newNode;
     } else {
@@ -51,35 +54,33 @@ void ListaDobEnlazada::add(int value) {
     ++listSize;
 }
 
-void ListaDobEnlazada::remove(int index) {
+template<typename T>
+void ListaDobEnlazada<T>::remove(int index) {
     if (index < 0 || index >= size()) {
         throw std::out_of_range("Index out of bounds");
     }
 
-    MPointer<Node> current = first;
-    for (int i = 0; i < index; ++i) {
-        current = current->next;
-    }
+    MPointer<Node<T>> current = getNode(index);
 
-    if (current->prev.get()) {
+    if (current->prev != nullptr) {
         current->prev->next = current->next;
     } else {
-        first = current->next;  // Si estamos eliminando el primer nodo
+        first = current->next;
     }
 
-    if (current->next.get()) {
+    if (current->next != nullptr) {
         current->next->prev = current->prev;
     } else {
-        last = current->prev;  // Si estamos eliminando el último nodo
+        last = current->prev;
     }
 
-    // MPointer maneja la eliminación automáticamente
-    --listSize;  // Actualizar el tamaño de la lista
+    --listSize;
 }
 
-
-void ListaDobEnlazada::printList() const {
-    MPointer<Node> current = first;
+//Imprime la lista
+template<typename T>
+void ListaDobEnlazada<T>::printList() const {
+    MPointer<Node<T>> current = first;
     while (current != nullptr) {
         std::cout << current->value << " ";
         current = current->next;
@@ -87,27 +88,78 @@ void ListaDobEnlazada::printList() const {
     std::cout << std::endl;
 }
 
-void ListaDobEnlazada::bubbleSort() {
-    if (first == nullptr) {
-        return;
+template<typename T>
+T ListaDobEnlazada<T>::get(int index) const {
+    MPointer<Node<T>> node = getNode(index);
+    if (node == nullptr) {
+        throw std::out_of_range("Index out of bounds");
     }
-    int n = size();
-    for (int i = 0; i < n - 1; i++) {
+    return node->value;
+}
 
-        for (int j = 0; j < n - i - 1; j++) {
 
+template<typename T>
+void ListaDobEnlazada<T>::set(int index, const T& value) {
+    MPointer<Node<T>> node = getNode(index);
+    if (node != nullptr) {
+        node->value = value;
+    } else {
+        throw std::out_of_range("Index out of bounds");
+    }
+}
+
+//Realiza el swap necesario en lo algoritmos de ordenamiento
+template<typename T>
+void ListaDobEnlazada<T>::swap(int i, int j) {
+    if (i == j) return;
+    T temp = get(i);
+    set(i, get(j));
+    set(j, temp);
+}
+
+//Obtener el tamaño
+template<typename T>
+int ListaDobEnlazada<T>::size() const {
+    return listSize;
+}
+
+//Obtener el nodo
+template<typename T>
+MPointer<Node<T>> ListaDobEnlazada<T>::getNode(int index) const {
+    if (index < 0 || index >= listSize) {
+        return nullptr;
+    }
+
+    MPointer<Node<T>> current = first;
+    for (int i = 0; i < index && current != nullptr; i++) {
+        current = current->next;
+    }
+
+    return current;
+}
+
+//Agregar elementos a la lista
+template<typename T>
+void ListaDobEnlazada<T>::append(const T& value) {
+    add(value);
+}
+
+//Algoritmos de ordenamiento
+template<typename T>
+void ListaDobEnlazada<T>::bubbleSort() {
+    for (int i = 0; i < size() - 1; i++) {
+        for (int j = 0; j < size() - i - 1; j++) {
             if (get(j) > get(j + 1)) {
-
                 swap(j, j + 1);
             }
         }
     }
 }
 
-void ListaDobEnlazada::insertionSort() {
-    int n = size();
-    for (int i = 1; i < n; i++) {
-        int key = get(i);
+template<typename T>
+void ListaDobEnlazada<T>::insertionSort() {
+    for (int i = 1; i < size(); i++) {
+        T key = get(i);
         int j = i - 1;
 
         while (j >= 0 && get(j) > key) {
@@ -118,12 +170,14 @@ void ListaDobEnlazada::insertionSort() {
     }
 }
 
-void ListaDobEnlazada::quickSort() {
+template<typename T>
+void ListaDobEnlazada<T>::quickSort() {
     quickSortRecursive(0, size() - 1);
 }
 
-int ListaDobEnlazada::partition(int low, int high) {
-    int pivot = get(high);
+template<typename T>
+int ListaDobEnlazada<T>::partition(int low, int high) {
+    T pivot = get(high);
     int i = low - 1;
 
     for (int j = low; j <= high - 1; j++) {
@@ -136,76 +190,13 @@ int ListaDobEnlazada::partition(int low, int high) {
     return (i + 1);
 }
 
-void ListaDobEnlazada::quickSortRecursive(int low, int high) {
+template<typename T>
+void ListaDobEnlazada<T>::quickSortRecursive(int low, int high) {
     if (low < high) {
         int pi = partition(low, high);
         quickSortRecursive(low, pi - 1);
         quickSortRecursive(pi + 1, high);
     }
 }
-
-int ListaDobEnlazada::get(int index) const {
-    MPointer<Node> node = getNode(index);
-    if (node == nullptr) {
-        return -1;  // Error, valor no encontrado
-    }
-    return node->value;
-}
-
-void ListaDobEnlazada::set(int index, int value) {
-    MPointer<Node> node = getNode(index);
-    if (node != nullptr) {
-        node->value = value;
-    } else {
-    }
-}
-
-void ListaDobEnlazada::swap(int i, int j) {
-    if (i == j) return;
-    MPointer<Node> node_i = getNode(i);
-    MPointer<Node> node_j = getNode(j);
-    if (node_i == nullptr || node_j == nullptr) return;
-
-    int temp = node_i->value;
-    node_i->value = node_j->value;
-    node_j->value = temp;
-}
-
-int ListaDobEnlazada::size() const {
-    return listSize;
-}
-
-MPointer<Node> ListaDobEnlazada::getNode(int index) const {
-    if (index < 0) {
-        std::cerr << "Error: Índice negativo en getNode()" << std::endl;
-        return nullptr;
-    }
-
-    MPointer<Node> current = first;
-    for (int i = 0; i < index && current != nullptr; i++) {
-        current = current->next;
-    }
-
-    if (current == nullptr) {
-        std::cerr << "Error: Índice fuera de rango en getNode()" << std::endl;
-    }
-
-    return current;
-}
-
-void ListaDobEnlazada::append(int value) {
-    MPointer<Node> newNode = MPointer<Node>::New();
-    *newNode = Node(value);
-
-    if (first == nullptr) {
-        first = last = newNode;  // Si la lista está vacía
-    } else {
-        newNode->prev = last;  // El nuevo nodo apunta al actual último nodo como su anterior
-        last->next = newNode;  // El actual último nodo apunta al nuevo nodo como su siguiente
-        last = newNode;  // Ahora, el nuevo nodo se convierte en el último nodo
-    }
-    ++listSize;
-}
-
 
 #endif // LISTADOBENLAZADA_H
