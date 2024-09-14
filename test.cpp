@@ -3,21 +3,36 @@
 #include "ListaDobEnlazada.h"
 
 // Prueba para MPointer
-TEST(MPointerTest, BasicOperations) {
+TEST(MPointerTest, OperacionesBasicas) {
     MPointer<int> mp1 = MPointer<int>::New();
-    *mp1 = 42;
+    mp1 = 42;
     EXPECT_EQ(*mp1, 42);
 
-    MPointer<int> mp2 = mp1;
+    MPointer<int> mp2 = MPointer<int>::New();
+    mp2 = mp1;
     EXPECT_EQ(*mp2, 42);
+
+    mp2 = 100;
+    EXPECT_EQ(*mp2, 100);
     EXPECT_EQ(*mp1, 42);
+}
+
+// Pruebas para el constructor y destructor por defecto
+TEST(MPointerTest, ConstructorYDestructorPorDefecto) {
+    MPointer<int> mp1 = MPointer<int>::New();
+    EXPECT_NE(mp1.get(), nullptr);
+}
+
+TEST(MPointerTest, ListaDobEnlazadaConstructorYDestructorPorDefecto) {
+    ListaDobEnlazada<int> lista;
+    EXPECT_EQ(lista.size(), 0);
 }
 
 // Pruebas para ListaDobEnlazada
 
 // Prueba para agregar elementos a la lista
-TEST(ListaDobEnlazadaTest, AddElements) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, AgregarElementos) {
+    ListaDobEnlazada<int> lista;
     lista.append(5);
     lista.append(2);
     lista.append(9);
@@ -28,8 +43,8 @@ TEST(ListaDobEnlazadaTest, AddElements) {
 }
 
 // Prueba para obtener elementos en posiciones específicas
-TEST(ListaDobEnlazadaTest, GetElements) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, ObtenerElementos) {
+    ListaDobEnlazada<int> lista;
     lista.append(10);
     lista.append(20);
     lista.append(30);
@@ -40,8 +55,8 @@ TEST(ListaDobEnlazadaTest, GetElements) {
 }
 
 // Prueba para eliminar elementos de la lista
-TEST(ListaDobEnlazadaTest, RemoveElements) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, EliminarElementos) {
+    ListaDobEnlazada<int> lista;
     lista.append(5);
     lista.append(3);
     lista.append(7);
@@ -54,8 +69,8 @@ TEST(ListaDobEnlazadaTest, RemoveElements) {
 }
 
 // Prueba para el tamaño de la lista
-TEST(ListaDobEnlazadaTest, ListSize) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, TamanoLista) {
+    ListaDobEnlazada<int> lista;
     EXPECT_EQ(lista.size(), 0);
 
     lista.append(8);
@@ -64,8 +79,8 @@ TEST(ListaDobEnlazadaTest, ListSize) {
 }
 
 // Prueba de iteración sobre la lista
-TEST(ListaDobEnlazadaTest, IterateList) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, IterarLista) {
+    ListaDobEnlazada<int> lista;
     lista.append(1);
     lista.append(2);
     lista.append(3);
@@ -80,8 +95,8 @@ TEST(ListaDobEnlazadaTest, IterateList) {
 // Pruebas de ordenamiento
 
 // Prueba de BubbleSort con una lista ordenada
-TEST(ListaDobEnlazadaTest, BubbleSortAlreadySorted) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, BubbleSortYaOrdenado) {
+    ListaDobEnlazada<int> lista;
     lista.append(1);
     lista.append(2);
     lista.append(3);
@@ -94,8 +109,8 @@ TEST(ListaDobEnlazadaTest, BubbleSortAlreadySorted) {
 }
 
 // Prueba de BubbleSort con una lista en orden inverso
-TEST(ListaDobEnlazadaTest, BubbleSortReversed) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, BubbleSortInverso) {
+    ListaDobEnlazada<int> lista;
     lista.append(3);
     lista.append(2);
     lista.append(1);
@@ -109,7 +124,7 @@ TEST(ListaDobEnlazadaTest, BubbleSortReversed) {
 
 // Prueba de QuickSort
 TEST(ListaDobEnlazadaTest, QuickSort) {
-    ListaDobEnlazada lista;
+    ListaDobEnlazada<int> lista;
     lista.append(9);
     lista.append(4);
     lista.append(7);
@@ -127,7 +142,7 @@ TEST(ListaDobEnlazadaTest, QuickSort) {
 
 // Prueba de InsertionSort
 TEST(ListaDobEnlazadaTest, InsertionSort) {
-    ListaDobEnlazada lista;
+    ListaDobEnlazada<int> lista;
     lista.append(5);
     lista.append(1);
     lista.append(4);
@@ -144,8 +159,8 @@ TEST(ListaDobEnlazadaTest, InsertionSort) {
 }
 
 // Prueba con lista vacía en todos los algoritmos de ordenamiento
-TEST(ListaDobEnlazadaTest, SortingEmptyList) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, OrdenarListaVacia) {
+    ListaDobEnlazada<int> lista;
 
     lista.bubbleSort();
     EXPECT_EQ(lista.size(), 0);
@@ -158,8 +173,8 @@ TEST(ListaDobEnlazadaTest, SortingEmptyList) {
 }
 
 // Prueba con un solo elemento
-TEST(ListaDobEnlazadaTest, SortingSingleElement) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, OrdenarUnSoloElemento) {
+    ListaDobEnlazada<int> lista;
     lista.append(42);
 
     lista.bubbleSort();
@@ -173,8 +188,8 @@ TEST(ListaDobEnlazadaTest, SortingSingleElement) {
 }
 
 // Prueba de ordenamiento con elementos duplicados
-TEST(ListaDobEnlazadaTest, SortingWithDuplicates) {
-    ListaDobEnlazada lista;
+TEST(ListaDobEnlazadaTest, OrdenarConDuplicados) {
+    ListaDobEnlazada<int> lista;
     lista.append(4);
     lista.append(1);
     lista.append(4);
@@ -193,7 +208,7 @@ TEST(ListaDobEnlazadaTest, SortingWithDuplicates) {
 // Pruebas adicionales de MPointer
 
 // Verificación de asignación y liberación de memoria
-TEST(MPointerTest, MemoryManagement) {
+TEST(MPointerTest, GestionMemoria) {
     MPointer<int> mp1 = MPointer<int>::New();
     *mp1 = 100;
     EXPECT_EQ(*mp1, 100);
@@ -203,7 +218,7 @@ TEST(MPointerTest, MemoryManagement) {
 }
 
 // Verificación de referencias múltiples
-TEST(MPointerTest, MultipleReferences) {
+TEST(MPointerTest, ReferenciasMultiples) {
     MPointer<int> mp1 = MPointer<int>::New();
     *mp1 = 200;
 
@@ -215,8 +230,8 @@ TEST(MPointerTest, MultipleReferences) {
 }
 
 // Prueba de integración con ListaDobEnlazada usando MPointer
-TEST(ListaDobEnlazadaTest, MPointerIntegration) {
-    MPointer<ListaDobEnlazada> lista = MPointer<ListaDobEnlazada>::New();
+TEST(ListaDobEnlazadaTest, IntegracionMPointer) {
+    MPointer<ListaDobEnlazada<int>> lista = MPointer<ListaDobEnlazada<int>>::New();
     lista->append(10);
     lista->append(20);
 
